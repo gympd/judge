@@ -1,4 +1,4 @@
-FROM gcc:11-bullseye AS isolate-build
+FROM gcc:12-bullseye AS isolate-build
 
 WORKDIR /app
 
