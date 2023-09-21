@@ -50,6 +50,7 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 
 	config_required_fields = ('memory', 'time')
 
+	logger.debug('Cleaning up container')
 	subprocess.run([isolate_exec, '--cleanup'], check=True)
 
 	while running.is_set():

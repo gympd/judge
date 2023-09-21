@@ -1,0 +1,20 @@
+version: "3.4"
+
+services:
+  judge:
+    build:
+      context: .
+    ports:
+      - "12347:12347"
+    volumes:
+      - ./:/app/
+      - ./data:/data
+    environment:
+      - UPLOAD_URL=http://localhost/problems/protocol_upload/
+      - TOKEN=abcd
+      - TASKS_DIR=/data/problems
+      - ISOLATE_PATH=/app/isolate/isolate
+    env_file:
+      - .env
+    command: "python3 main.py"
+    restart: unless-stopped
