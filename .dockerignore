@@ -1,0 +1,8 @@
+__pycache__
+.idea
+.github
+.git
+.env
+.ruff_cache
+/uploads/
+/static/
