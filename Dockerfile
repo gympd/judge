@@ -21,6 +21,8 @@ RUN pip install --upgrade pipenv
 COPY Pipfile Pipfile.lock ./
 RUN pipenv install --system --deploy
 
+COPY . /app/
+
 COPY --from=isolate-build /app/isolate /app/isolate/
 COPY --from=isolate-build /lib/x86_64-linux-gnu/libcap* /lib/x86_64-linux-gnu/
 COPY --from=isolate-build /usr/local/etc/isolate /usr/local/etc/
