@@ -6,6 +6,7 @@ class RunnerInfo:
 
 class Runner:
 	info: RunnerInfo
+	isolate_args: list[str] = []
 
 	@staticmethod
 	def prepare_compile(box_path: str, source_path: str):

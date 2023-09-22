@@ -121,6 +121,11 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 			# Get run command
 			run_command = [
 				isolate_exec,
+			]
+
+			run_command.extend(runner.isolate_args)
+
+			run_command.extend([
 				'-M-', # print to stdout
 				'-iin',
 				'-oout',
@@ -130,7 +135,7 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 				f'-x {config["extra-time"] if "extra-time" in config else config["time"] * 1.2}',
 				'--run',
 				'--'
-			]
+			])
 			run_command.extend(runner.run(f'source.{task.language}'))
 
 			runner.prepare_runtime(box_path)
