@@ -83,7 +83,10 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 					if field not in config:
 						logger.error(f'Missing field {field} in config')
 						ok = False
-						return
+						break
+
+				if not ok:
+					continue
 
 			# Setup isolate
 			logger.debug('Initializing container')
@@ -176,6 +179,9 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 							case 'RE':
 								result = EXCResult()
 							case _:
+								logger.warn(f'Got unexpected result: {meta["status"]}')
+								logger.debug(meta)
+								logger.debug(p.stderr.decode())
 								result = ERRResult()
 
 						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0))
@@ -198,9 +204,8 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 			logger.debug('Cleaning up container')
 			subprocess.run([isolate_exec, '--cleanup'], check=True)
 
-		except Exception as e:
-			logger.error('Exception occurred during task processing, ignoring task')
-			logger.exception('')
+		except Exception:
+			logger.exception('Exception occurred during task processing, ignoring task')
 
 
 
