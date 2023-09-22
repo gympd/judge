@@ -1,5 +1,6 @@
 from .template import Runner, RunnerInfo
 
+
 class CppRunner(Runner):
 	info = RunnerInfo('C++', ['cpp', 'cc'], True)
 

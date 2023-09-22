@@ -2,6 +2,7 @@ import shutil
 
 from .template import Runner, RunnerInfo
 
+
 # vytvor triedu (pomenuj lubovolne, ale odvod ju od Runner)
 class ExampleRunner(Runner):
 	# info o tomto jazyku: nazov, pripony, ci sa musi kompilovat

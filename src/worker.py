@@ -1,19 +1,20 @@
-from os import environ, listdir, path
-from io import BytesIO
 import queue
 import shutil
-import requests
 import subprocess
-import time
 import threading
+import time
+from io import BytesIO
+from os import environ, listdir, path
+
+import requests
 import yaml
 from lib.diff import diff
-
 from lib.log import logger
-from lib.protocol import ERRResult, EXCResult, IGNResult, OKResult, Protocol, Result, TLEResult, Test, WAResult
+from lib.protocol import ERRResult, EXCResult, IGNResult, OKResult, Protocol, Result, Test, TLEResult, WAResult
 from lib.util import get_key_value
 from runners import get_runner, init_runners
 from tasks import TaskInfo
+
 
 def submit_results(task: TaskInfo, protocol: Protocol):
 	logger.debug('Submitting protocol')

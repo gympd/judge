@@ -1,6 +1,7 @@
 import logging
 from os import environ
 
+
 class Formatter(logging.Formatter):
 
     reset = '\x1b[0m'

@@ -1,7 +1,8 @@
-from os import environ
 import shutil
+from os import environ
 
 from .template import Runner, RunnerInfo
+
 
 class PythonRunner(Runner):
 	info = RunnerInfo('Python', ['py'], False)

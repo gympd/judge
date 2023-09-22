@@ -1,5 +1,6 @@
 from lib.xml_utils import dict_to_xml
 
+
 class Result(object):
 	code: int
 	message: str

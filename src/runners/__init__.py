@@ -1,8 +1,9 @@
-import os
 import importlib
 import inspect
+import os
 
 from lib.log import logger
+
 from runners.template import Runner
 
 blacklisted_runners = ('__init__.py', 'template.py', 'example.py')
