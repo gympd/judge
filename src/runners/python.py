@@ -1,3 +1,4 @@
+from os import environ
 import shutil
 
 from .template import Runner, RunnerInfo
@@ -7,7 +8,7 @@ class PythonRunner(Runner):
 
 	@staticmethod
 	def prepare_runtime(box_path: str):
-		shutil.copy('/usr/bin/python3', box_path)
+		shutil.copy(environ.get('PYTHON_EXECUTABLE_PATH', '/usr/bin/python3'), box_path)
 
 	@staticmethod
 	def run(file: str) -> list[str]:
