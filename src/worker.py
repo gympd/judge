@@ -173,6 +173,9 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 
 					if 'status' in meta:
 						result: Result
+						logger.debug('Not ok status')
+						logger.debug(meta)
+						logger.debug(p.stderr.decode())
 						match meta['status']:
 							case 'TO':
 								result = TLEResult()
@@ -180,8 +183,6 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 								result = EXCResult()
 							case _:
 								logger.warn(f'Got unexpected result: {meta["status"]}')
-								logger.debug(meta)
-								logger.debug(p.stderr.decode())
 								result = ERRResult()
 
 						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0))
