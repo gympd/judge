@@ -1,15 +1,15 @@
-FROM gcc:11-bullseye AS isolate-build
+FROM gcc:11-bookworm AS isolate-build
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y libcap-dev && rm -rf /var/lib/apt/lists/*
-RUN git clone https://github.com/ioi/isolate.git
+COPY ./isolate /app/isolate
 
 WORKDIR /app/isolate
 RUN CFLAGS="-static" make isolate
 RUN make install
 
-FROM python:3.11-bookworm AS base
+FROM python:3.11-slim-bookworm AS base
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN pipenv install --system --deploy
 COPY . /app/
 
 COPY --from=isolate-build /app/isolate /app/isolate/
-COPY --from=isolate-build /lib/x86_64-linux-gnu/libcap* /lib/x86_64-linux-gnu/
+COPY --from=isolate-build /usr/lib/x86_64-linux-gnu/libcap* /lib/x86_64-linux-gnu/
 COPY --from=isolate-build /usr/local/etc/isolate /usr/local/etc/
 
 WORKDIR /app/src
