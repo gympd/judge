@@ -71,7 +71,19 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 		task = queue.get()
 
 		try:
-			runner = get_runner(task.language)
+			try:
+				runner = get_runner(task.language)
+			except NotImplementedError:
+				protocol = Protocol()
+				protocol.add_compilation_log(
+f'''Ľutujeme, ale jazyk {task.language} zatiaľ nepodporujeme...
+Ak si myslíš, že by sme tento jazyk mali podporovať, otvor Issue na:
+https://github.com/gympd/judge/issues/new'''
+				)
+
+				submit_results(task, protocol)
+
+				continue
 
 			logger.info(f'Got submission for task {task.task_id} in {runner.info.language}')
 
