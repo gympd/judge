@@ -135,7 +135,7 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 					logger.debug('Compilation error')
 
 					with open(path.join(box_path, 'out'), 'r') as out_file:
-						protocol.add_compilation_log(smart_truncate(out_file.read(), 256))
+						protocol.add_compilation_log(smart_truncate(out_file.read(), 4096))
 
 					submit_results(task, protocol)
 
