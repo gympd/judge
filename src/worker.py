@@ -220,7 +220,7 @@ https://github.com/gympd/judge/issues/new'''
 								logger.warn(f'Got unexpected result: {meta["status"]}')
 								result = ERRResult()
 
-						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0, smart_truncate(p.stderr.decode())))
+						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0, smart_truncate(p.stderr.decode(), 1024)))
 
 					else:
 						with open(path.join(case_folder, f'{case}.out'), 'r') as our_file, open(path.join(box_path, 'out'), 'r') as user_file:
