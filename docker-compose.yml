@@ -2,6 +2,7 @@ version: "3.4"
 
 services:
   judge:
+    privileged: true
     build:
       context: .
     ports:
