@@ -9,7 +9,7 @@ class CppRunner(Runner):
 
 	compile_limits = RunnerCompileLimits(processes = 5, memory = 128)
 
-	compile_isolate_args = [f'-EPATH={environ.get("PATH")}:/']
+	compile_isolate_args = [f'-EPATH={environ.get("PATH")}:/', '--stderr-to-stdout']
 
 	@staticmethod
 	def prepare_compile(box_path: str, source_path: str):
