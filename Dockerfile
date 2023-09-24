@@ -1,7 +1,10 @@
 # isolate build
 FROM gcc:13-bookworm AS isolate-build
 
+WORKDIR /app
+
 RUN apt-get update && apt-get install -y libcap-dev && rm -rf /var/lib/apt/lists/*
+RUN git clone https://github.com/ioi/isolate.git
 
 WORKDIR /app/isolate
 RUN CFLAGS="-static" make isolate
