@@ -4,9 +4,17 @@ class RunnerInfo:
 		self.extensions = extensions
 		self.compilation = compilation
 
+class RunnerCompileLimits:
+	def __init__(self, time: float = 10, memory: int = 256, processes: int = 1) -> None:
+		self.time = time
+		self.memory = memory
+		self.processes = processes
+
 class Runner:
 	info: RunnerInfo
-	isolate_args: list[str] = []
+	compile_limits = RunnerCompileLimits()
+	compile_isolate_args: list[str] = []
+	run_isolate_args: list[str] = []
 
 	@staticmethod
 	def prepare_compile(box_path: str, source_path: str):

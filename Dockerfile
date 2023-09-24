@@ -21,6 +21,17 @@ RUN pip install --upgrade pipenv
 COPY Pipfile Pipfile.lock ./
 RUN pipenv install --system --deploy
 
+# install packages required for each runner:
+RUN apt-get update
+
+## python: ruff
+## c++: g++
+RUN pip install ruff
+RUN apt-get install -y g++
+
+# cleanup
+RUN rm -rf /var/lib/apt/lists/*
+
 COPY . /app/
 
 COPY --from=isolate-build /app/isolate /app/isolate/

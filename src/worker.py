@@ -11,7 +11,7 @@ import yaml
 from lib.diff import diff
 from lib.log import logger
 from lib.protocol import ERRResult, EXCResult, IGNResult, OKResult, Protocol, Result, Test, TLEResult, WAResult
-from lib.util import get_key_value
+from lib.util import get_key_value, smart_truncate
 from runners import get_runner, init_runners
 from tasks import TaskInfo
 
@@ -22,6 +22,10 @@ def submit_results(task: TaskInfo, protocol: Protocol):
 
 	if not result:
 		logger.error('Protocol creation failed')
+		return
+
+	if 'OUTPUT_PROTOCOL_ONLY' in environ:
+		logger.info(result)
 		return
 
 	response = requests.post(
@@ -47,12 +51,17 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 
 	init_runners()
 
-	isolate_exec = environ.get('ISOLATE_PATH', 'isolate')
+	isolate_args = [
+		environ.get('ISOLATE_PATH', 'isolate')
+	]
+
+	if 'CG_ENABLED' in environ:
+		isolate_args.append('--cg')
 
 	config_required_fields = ('memory', 'time')
 
 	logger.debug('Cleaning up container')
-	subprocess.run([isolate_exec, '--cleanup'], check=True)
+	subprocess.run(isolate_args + ['--cleanup'], check=True)
 
 	while running.is_set():
 		if queue.empty():
@@ -91,7 +100,7 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 
 			# Setup isolate
 			logger.debug('Initializing container')
-			p = subprocess.run([isolate_exec, '--init'], check=True, capture_output=True)
+			p = subprocess.run(isolate_args + ['--init'], check=True, capture_output=True)
 			box_path = path.join(p.stdout.decode().strip(), 'box')
 
 			# Setup file
@@ -104,28 +113,41 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 			if runner.info.compilation:
 				runner.prepare_compile(box_path, f'source.{task.language}')
 
-				compile_command = runner.compile(box_path, f'source.{task.language}')
+				compile_command = isolate_args.copy()
 
-				try:
-					subprocess.run(compile_command, check=True, capture_output=True, cwd=box_path)
+				compile_command.extend(runner.compile_isolate_args)
+				compile_command.extend([
+					'-M-', # print to stdout
+					'-oout',
+					f'-m{runner.compile_limits.memory * 1024}',
+					f'-t{runner.compile_limits.time}',
+					f'-p{runner.compile_limits.processes}',
+					'--run',
+					'--'
+				])
+				compile_command.extend(runner.compile(box_path, f'source.{task.language}'))
 
-				except subprocess.CalledProcessError as e:
+				p = subprocess.run(compile_command, capture_output=True)
+
+				meta = get_key_value(p.stdout.decode())
+
+				if 'status' in meta:
 					logger.debug('Compilation error')
-					protocol.add_compilation_log(e.stderr.decode() + e.stdout.decode())
+
+					with open(path.join(box_path, 'out'), 'r') as out_file:
+						protocol.add_compilation_log(smart_truncate(out_file.read(), 256))
+
 					submit_results(task, protocol)
 
 					logger.debug('Cleaning up container')
-					subprocess.run([isolate_exec, '--cleanup'], check=True)
+					subprocess.run(isolate_args + ['--cleanup'], check=True)
 
 					continue
 
 			# Get run command
-			run_command = [
-				isolate_exec,
-			]
+			run_command = isolate_args.copy()
 
-			run_command.extend(runner.isolate_args)
-
+			run_command.extend(runner.run_isolate_args)
 			run_command.extend([
 				'-M-', # print to stdout
 				'-iin',
@@ -144,7 +166,6 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 			# Iterate all test cases
 			tests_dir = path.join(task_dir, 'tests')
 			for test_set in sorted(listdir(tests_dir)):
-				# logger.debug(f'Set {test_set}')
 				protocol.begin_set(test_set)
 
 				testcases: list[str] = []
@@ -169,7 +190,6 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 						continue
 
 					ignore_set = True
-					# logger.debug(f'Case {case}')
 
 					shutil.copy(path.join(case_folder, f'{case}.in'), path.join(box_path, 'in'))
 
@@ -179,9 +199,6 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 
 					if 'status' in meta:
 						result: Result
-						logger.debug('Not ok status')
-						logger.debug(meta)
-						logger.debug(p.stderr.decode())
 						match meta['status']:
 							case 'TO':
 								result = TLEResult()
@@ -191,12 +208,11 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 								logger.warn(f'Got unexpected result: {meta["status"]}')
 								result = ERRResult()
 
-						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0))
+						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0, smart_truncate(p.stderr.decode())))
 
 					else:
 						with open(path.join(case_folder, f'{case}.out'), 'r') as our_file, open(path.join(box_path, 'out'), 'r') as user_file:
 							our_str, user_str = our_file.read(), user_file.read()
-
 
 							if our_str == user_str:
 								protocol.add_test(Test(f'{test_set}.{case}', OKResult(), float(meta['time'])))
@@ -209,7 +225,7 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 			submit_results(task, protocol)
 
 			logger.debug('Cleaning up container')
-			subprocess.run([isolate_exec, '--cleanup'], check=True)
+			subprocess.run(isolate_args + ['--cleanup'], check=True)
 
 		except Exception:
 			logger.exception('Exception occurred during task processing, ignoring task')

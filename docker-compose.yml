@@ -11,7 +11,7 @@ services:
       - ./:/app/
       - ./data:/data
     environment:
-      - UPLOAD_URL=http://localhost/problems/protocol_upload/
+      - OUTPUT_PROTOCOL_ONLY=1
       - TOKEN=abcd
       - TASKS_DIR=/data/problems
       - ISOLATE_PATH=/app/isolate/isolate
