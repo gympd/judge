@@ -209,6 +209,8 @@ https://github.com/gympd/judge/issues/new'''
 
 					meta = get_key_value(p.stdout.decode())
 
+					logger.debug(meta)
+
 					if 'status' in meta:
 						result: Result
 						match meta['status']:
