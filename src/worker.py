@@ -211,20 +211,20 @@ https://github.com/gympd/judge/issues/new'''
 
 					logger.debug(meta)
 
-					if 'status' in meta:
+					if 'cg-oom-killed' in meta:
+						protocol.add_test(Test(f'{test_set}.{case}', MLEResult(), float(meta['time']) if 'time' in meta else 0, memory = int(meta['cg-mem']) if 'cg-mem' in meta else None))
+
+					elif 'status' in meta:
 						result: Result
 
-						if 'cg-oom-killed' in meta:
-							result = MLEResult()
-						else:
-							match meta['status']:
-								case 'TO':
-									result = TLEResult()
-								case 'RE':
-									result = EXCResult()
-								case _:
-									logger.warn(f'Got unexpected result: {meta["status"]}')
-									result = ERRResult()
+						match meta['status']:
+							case 'TO':
+								result = TLEResult()
+							case 'RE':
+								result = EXCResult()
+							case _:
+								logger.warn(f'Got unexpected result: {meta["status"]}')
+								result = ERRResult()
 
 						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0, details = smart_truncate(p.stderr.decode(), 1024), memory = int(meta['cg-mem']) if 'cg-mem' in meta else None))
 
