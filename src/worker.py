@@ -10,7 +10,7 @@ import requests
 import yaml
 from lib.diff import diff
 from lib.log import logger
-from lib.protocol import ERRResult, EXCResult, IGNResult, OKResult, Protocol, Result, Test, TLEResult, WAResult
+from lib.protocol import ERRResult, EXCResult, IGNResult, MLEResult, OKResult, Protocol, Result, Test, TLEResult, WAResult
 from lib.util import get_key_value, smart_truncate
 from runners import get_runner, init_runners
 from tasks import TaskInfo
@@ -119,7 +119,7 @@ https://github.com/gympd/judge/issues/new'''
 			with open(path.join(box_path, f'source.{task.language}'), 'w') as file:
 				file.write(task.program)
 
-			protocol = Protocol()
+			protocol = Protocol(config['time'], config['memory'])
 
 			# Compile if necessary
 			if runner.info.compilation:
@@ -213,26 +213,30 @@ https://github.com/gympd/judge/issues/new'''
 
 					if 'status' in meta:
 						result: Result
-						match meta['status']:
-							case 'TO':
-								result = TLEResult()
-							case 'RE':
-								result = EXCResult()
-							case _:
-								logger.warn(f'Got unexpected result: {meta["status"]}')
-								result = ERRResult()
 
-						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0, smart_truncate(p.stderr.decode(), 1024)))
+						if 'cg-oom-killed' in meta:
+							result = MLEResult()
+						else:
+							match meta['status']:
+								case 'TO':
+									result = TLEResult()
+								case 'RE':
+									result = EXCResult()
+								case _:
+									logger.warn(f'Got unexpected result: {meta["status"]}')
+									result = ERRResult()
+
+						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0, details = smart_truncate(p.stderr.decode(), 1024), memory = int(meta['cg-mem']) if 'cg-mem' in meta else None))
 
 					else:
 						with open(path.join(case_folder, f'{case}.out'), 'r') as our_file, open(path.join(box_path, 'out'), 'r') as user_file:
 							our_str, user_str = our_file.read(), user_file.read()
 
 							if our_str == user_str:
-								protocol.add_test(Test(f'{test_set}.{case}', OKResult(), float(meta['time'])))
+								protocol.add_test(Test(f'{test_set}.{case}', OKResult(), float(meta['time']), memory = int(meta['cg-mem']) if 'cg-mem' in meta else None))
 								ignore_set = False
 							else:
-								protocol.add_test(Test(f'{test_set}.{case}', WAResult(), float(meta['time']), diff(our_str, user_str)))
+								protocol.add_test(Test(f'{test_set}.{case}', WAResult(), float(meta['time']), details = diff(our_str, user_str), memory = int(meta['cg-mem']) if 'cg-mem' in meta else None))
 
 				protocol.end_set(test_set)
 

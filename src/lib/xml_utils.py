@@ -18,7 +18,7 @@ def dict_to_xml(d, parent=None):
 					element = ET.Element(key)
 					parent.append(element)
 					dict_to_xml(item, element)
-			else:
+			elif value is not None:
 				element = ET.Element(key)
 				element.text = str(value)
 				parent.append(element)

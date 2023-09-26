@@ -1,3 +1,6 @@
+from os import environ
+from typing import NamedTuple
+
 from lib.xml_utils import dict_to_xml
 
 
@@ -35,10 +38,10 @@ class EXCResult(Result):
 	message = 'EXC'
 	description = 'Exception'
 
-# class MLEResult(Result):
-# 	code = 5 # maybe another id, idk
-# 	message = 'MLE'
-# 	description = 'Memory limit exceed'
+class MLEResult(Result):
+	code = 5 # maybe another id, idk
+	message = 'MLE'
+	description = 'Memory limit exceed'
 
 class ERRResult(Result):
 	code = 6 # maybe another id, idk
@@ -50,12 +53,21 @@ class IGNResult(Result):
 	message = 'IGN'
 	description = 'Ignored'
 
-class Test():
-	def __init__(self, name: str, result: Result, total_time: float, details: str | None = None):
-		self.name = name
-		self.result = result
-		self.time = int(total_time * 1000)
-		self.details = details
+
+class Test(NamedTuple):
+	name: str
+	result: Result
+	time: float
+	memory: int | None = None
+	details: str | None = None
+
+
+class TaskLimits(NamedTuple):
+	time: int
+	memory: int
+
+
+EXTENDED_PROTOCOL = 'EXTENDED_PROTOCOL' in environ
 
 class Protocol:
 	tests: list[Test] = []
@@ -65,9 +77,10 @@ class Protocol:
 	current_set_result = OKResult()
 	result = OKResult()
 
-	def __init__(self) -> None:
+	def __init__(self, time_limit: int, memory_limit: int) -> None:
 		self.tests = []
 		self.compile_log = None
+		self.limits = TaskLimits(time_limit, memory_limit)
 
 	compile_log: str | None = None
 
@@ -108,23 +121,22 @@ class Protocol:
 		}
 
 		for test in self.tests:
-			if test.details:
-				protocol['runLog']['test'].append({
-					'name': test.name,
-					'resultCode': test.result.code,
-					'resultMsg': test.result.message,
-					'time': test.time,
-					'details': test.details
-				})
-			else:
-				protocol['runLog']['test'].append({
-					'name': test.name,
-					'resultCode': test.result.code,
-					'resultMsg': test.result.message,
-					'time': test.time,
-				})
+			protocol['runLog']['test'].append({
+				'name': test.name,
+				'resultCode': test.result.code,
+				'resultMsg': test.result.message,
+				'time': int(test.time * 1000),
+				'memory': int(test.memory * 1024) if EXTENDED_PROTOCOL and test.memory is not None else None,
+				'details': test.details,
+			})
 
 		if self.compile_log:
 			protocol['compileLog'] = self.compile_log
+
+		if EXTENDED_PROTOCOL:
+			protocol['limits'] = {
+				'time': self.limits.time,
+				'memory': self.limits.memory
+			}
 
 		return dict_to_xml({'protokol': protocol})
