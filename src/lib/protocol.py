@@ -126,7 +126,7 @@ class Protocol:
 				'resultCode': test.result.code,
 				'resultMsg': test.result.message,
 				'time': int(test.time * 1000),
-				'memory': int(test.memory * 1024) if EXTENDED_PROTOCOL and test.memory is not None else None,
+				'memory': int(test.memory / 1024) if EXTENDED_PROTOCOL and test.memory is not None else None,
 				'details': test.details,
 			})
 
