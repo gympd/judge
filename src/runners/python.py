@@ -15,7 +15,6 @@ class PythonRunner(Runner):
 	@staticmethod
 	def prepare_compile(box_path: str, source_path: str):
 		ruff_exec = environ.get('RUFF_EXECUTABLE_PATH', shutil.which('ruff') or '/usr/bin/ruff')
-		print(ruff_exec)
 		shutil.copy(ruff_exec, box_path)
 
 	@staticmethod
