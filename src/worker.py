@@ -131,7 +131,7 @@ https://github.com/gympd/judge/issues/new'''
 				compile_command.extend([
 					'-M-', # print to stdout
 					'-oout',
-					f'-m{runner.compile_limits.memory * 1024}',
+					f'{"--cg-mem=" if "CG_ENABLED" in environ else "-m"}{runner.compile_limits.memory * 1024}',
 					f'-t{runner.compile_limits.time}',
 					f'-p{runner.compile_limits.processes}',
 					'--run',
@@ -164,10 +164,10 @@ https://github.com/gympd/judge/issues/new'''
 				'-M-', # print to stdout
 				'-iin',
 				'-oout',
-				f'-m {config["memory"] * 1024}',
-				f'-t {config["time"]}',
-				f'-w {config["wall-time"] if "wall-time" in config else config["time"] * 2}',
-				f'-x {config["extra-time"] if "extra-time" in config else config["time"] * 1.2}',
+				f'{"--cg-mem=" if "CG_ENABLED" in environ else "-m"}{config["memory"] * 1024}',
+				f'-t{config["time"]}',
+				f'-w{config["wall-time"] if "wall-time" in config else config["time"] * 2}',
+				f'-x{config["extra-time"] if "extra-time" in config else config["time"] * 1.2}',
 				'--run',
 				'--'
 			])
