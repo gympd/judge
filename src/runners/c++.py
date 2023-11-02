@@ -7,7 +7,7 @@ from .template import Runner, RunnerCompileLimits, RunnerInfo
 class CppRunner(Runner):
 	info = RunnerInfo('C++', ['cpp', 'cc'], True)
 
-	compile_limits = RunnerCompileLimits(processes = 5, memory = 128)
+	compile_limits = RunnerCompileLimits(processes=5, memory=128)
 
 	compile_isolate_args = [f'-EPATH={environ.get("PATH")}:/', '--stderr-to-stdout']
 
@@ -23,6 +23,7 @@ class CppRunner(Runner):
 	@staticmethod
 	def run(file: str) -> list[str]:
 		return ['exec']
+
 
 def init():
 	return CppRunner

@@ -7,7 +7,7 @@ from .template import Runner, RunnerCompileLimits, RunnerInfo
 class PythonRunner(Runner):
 	info = RunnerInfo('Python', ['py'], True)
 
-	compile_limits = RunnerCompileLimits(processes = 8, memory = 64)
+	compile_limits = RunnerCompileLimits(processes=8, memory=64)
 
 	# Fix python runner in docker container
 	run_isolate_args = [environ.get('PYTHON_ISOLATE_ARGS', '-ELD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/lib/x86_64-linux-gnu:/usr/local/lib/python3.11')]
@@ -29,6 +29,7 @@ class PythonRunner(Runner):
 	@staticmethod
 	def run(file: str) -> list[str]:
 		return ['python3', file]
+
 
 def init():
 	return PythonRunner

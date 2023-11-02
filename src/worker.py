@@ -1,13 +1,13 @@
 import queue
+import requests
 import shutil
 import subprocess
 import threading
 import time
+import yaml
 from io import BytesIO
 from os import environ, listdir, path
 
-import requests
-import yaml
 from lib.diff import diff
 from lib.log import logger
 from lib.protocol import ERRResult, EXCResult, IGNResult, MLEResult, OKResult, Protocol, Result, Test, TLEResult, WAResult
@@ -28,18 +28,7 @@ def submit_results(task: TaskInfo, protocol: Protocol):
 		logger.info(result)
 		return
 
-	response = requests.post(
-		environ.get('UPLOAD_URL', 'http://localhost/problems/protocol_upload/'),
-		data={
-			'submit': task.submit_id
-		},
-		files={
-			'protocol': ('protocol.xml', BytesIO(result))
-		},
-		headers={
-			'X-Token': environ.get('TOKEN', 'token-insecure')
-		}
-	)
+	response = requests.post(environ.get('UPLOAD_URL', 'http://localhost/problems/protocol_upload/'), data={'submit': task.submit_id}, files={'protocol': ('protocol.xml', BytesIO(result))}, headers={'X-Token': environ.get('TOKEN', 'token-insecure')})
 
 	if response.status_code != 200:
 		logger.error(f'Could not upload response to server: {response.status_code}')
@@ -51,9 +40,7 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 
 	init_runners()
 
-	isolate_args = [
-		environ.get('ISOLATE_PATH', 'isolate')
-	]
+	isolate_args = [environ.get('ISOLATE_PATH', 'isolate')]
 
 	if 'CG_ENABLED' in environ:
 		isolate_args.append('--cg')
@@ -74,11 +61,11 @@ def worker(running: threading.Event, queue: queue.Queue[TaskInfo]):
 			try:
 				runner = get_runner(task.language)
 			except NotImplementedError:
-				protocol = Protocol()
+				protocol = Protocol(-1, -1)
 				protocol.add_compilation_log(
-f'''Ľutujeme, ale jazyk {task.language} zatiaľ nepodporujeme...
+					f"""Ľutujeme, ale jazyk {task.language} zatiaľ nepodporujeme...
 Ak si myslíš, že by sme tento jazyk mali podporovať, otvor Issue na:
-https://github.com/gympd/judge/issues/new'''
+https://github.com/gympd/judge/issues/new"""
 				)
 
 				submit_results(task, protocol)
@@ -128,15 +115,17 @@ https://github.com/gympd/judge/issues/new'''
 				compile_command = isolate_args.copy()
 
 				compile_command.extend(runner.compile_isolate_args)
-				compile_command.extend([
-					'-M-', # print to stdout
-					'-oout',
-					f'{"--cg-mem=" if "CG_ENABLED" in environ else "-m"}{runner.compile_limits.memory * 1024}',
-					f'-t{runner.compile_limits.time}',
-					f'-p{runner.compile_limits.processes}',
-					'--run',
-					'--'
-				])
+				compile_command.extend(
+					[
+						'-M-',  # print to stdout
+						'-oout',
+						f'{"--cg-mem=" if "CG_ENABLED" in environ else "-m"}{runner.compile_limits.memory * 1024}',
+						f'-t{runner.compile_limits.time}',
+						f'-p{runner.compile_limits.processes}',
+						'--run',
+						'--',
+					]
+				)
 				compile_command.extend(runner.compile(box_path, f'source.{task.language}'))
 
 				p = subprocess.run(compile_command, capture_output=True)
@@ -160,17 +149,19 @@ https://github.com/gympd/judge/issues/new'''
 			run_command = isolate_args.copy()
 
 			run_command.extend(runner.run_isolate_args)
-			run_command.extend([
-				'-M-', # print to stdout
-				'-iin',
-				'-oout',
-				f'{"--cg-mem=" if "CG_ENABLED" in environ else "-m"}{config["memory"] * 1024}',
-				f'-t{config["time"]}',
-				f'-w{config["wall-time"] if "wall-time" in config else config["time"] * 2}',
-				f'-x{config["extra-time"] if "extra-time" in config else config["time"] * 1.2}',
-				'--run',
-				'--'
-			])
+			run_command.extend(
+				[
+					'-M-',  # print to stdout
+					'-iin',
+					'-oout',
+					f'{"--cg-mem=" if "CG_ENABLED" in environ else "-m"}{config["memory"] * 1024}',
+					f'-t{config["time"]}',
+					f'-w{config["wall-time"] if "wall-time" in config else config["time"] * 2}',
+					f'-x{config["extra-time"] if "extra-time" in config else config["time"] * 1.2}',
+					'--run',
+					'--',
+				]
+			)
 			run_command.extend(runner.run(f'source.{task.language}'))
 
 			runner.prepare_runtime(box_path)
@@ -212,7 +203,7 @@ https://github.com/gympd/judge/issues/new'''
 					logger.debug(meta)
 
 					if 'cg-oom-killed' in meta:
-						protocol.add_test(Test(f'{test_set}.{case}', MLEResult(), float(meta['time']) if 'time' in meta else 0, memory = int(meta['cg-mem']) if 'cg-mem' in meta else None))
+						protocol.add_test(Test(f'{test_set}.{case}', MLEResult(), float(meta['time']) if 'time' in meta else 0, memory=int(meta['cg-mem']) if 'cg-mem' in meta else None))
 
 					elif 'status' in meta:
 						result: Result
@@ -226,17 +217,17 @@ https://github.com/gympd/judge/issues/new'''
 								logger.warn(f'Got unexpected result: {meta["status"]}')
 								result = ERRResult()
 
-						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0, details = smart_truncate(p.stderr.decode(), 1024), memory = int(meta['cg-mem']) if 'cg-mem' in meta else None))
+						protocol.add_test(Test(f'{test_set}.{case}', result, float(meta['time']) if 'time' in meta else 0, details=smart_truncate(p.stderr.decode(), 1024), memory=int(meta['cg-mem']) if 'cg-mem' in meta else None))
 
 					else:
 						with open(path.join(case_folder, f'{case}.out'), 'r') as our_file, open(path.join(box_path, 'out'), 'r') as user_file:
 							our_str, user_str = our_file.read(), user_file.read()
 
 							if our_str == user_str:
-								protocol.add_test(Test(f'{test_set}.{case}', OKResult(), float(meta['time']), memory = int(meta['cg-mem']) if 'cg-mem' in meta else None))
+								protocol.add_test(Test(f'{test_set}.{case}', OKResult(), float(meta['time']), memory=int(meta['cg-mem']) if 'cg-mem' in meta else None))
 								ignore_set = False
 							else:
-								protocol.add_test(Test(f'{test_set}.{case}', WAResult(), float(meta['time']), details = diff(our_str, user_str), memory = int(meta['cg-mem']) if 'cg-mem' in meta else None))
+								protocol.add_test(Test(f'{test_set}.{case}', WAResult(), float(meta['time']), details=diff(our_str, user_str), memory=int(meta['cg-mem']) if 'cg-mem' in meta else None))
 
 				protocol.end_set(test_set)
 
@@ -247,8 +238,3 @@ https://github.com/gympd/judge/issues/new'''
 
 		except Exception:
 			logger.exception('Exception occurred during task processing, ignoring task')
-
-
-
-
-

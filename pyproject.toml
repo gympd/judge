@@ -1,2 +1,12 @@
 [tool.ruff]
 line-length = 250
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "tab"
+skip-magic-trailing-comma = true
+line-ending = "lf"
+
+[tool.ruff.isort]
+combine-as-imports = true
+extra-standard-library = ["requests", "yaml"]

@@ -4,7 +4,9 @@ from lib.util import smart_truncate
 Finds differences between two strings and returns human friendly message.
 It attempts to find all common user errors.
 """
-def diff(a: str, b: str, limit = 50) -> str:
+
+
+def diff(a: str, b: str, limit=50) -> str:
 	a_lines, b_lines = a.splitlines(keepends=True), b.splitlines(keepends=True)
 
 	if len(a_lines) != len(b_lines):

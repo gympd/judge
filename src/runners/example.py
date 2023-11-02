@@ -17,7 +17,6 @@ class ExampleRunner(Runner):
 	def prepare_compile(box_path: str, source_path: str):
 		shutil.copy('/usr/bin/my_compiler', box_path)
 
-
 	# vystup tohto prikazu vidi pouzivatel ako chybu, pokial prikaz skonci chybou
 	# tato funkcia ma vratit list so stringami, teda s prikazom, ktory sa ma spustit
 	# POZOR: tento prikaz nebezi v izolovanom prostredii
@@ -35,6 +34,7 @@ class ExampleRunner(Runner):
 	@staticmethod
 	def run(file: str) -> list[str]:
 		return ['my_runner', file]
+
 
 # tu returni tebou vytvorenu triedu
 # tu sa tiez moze nachadzat nejaka pridana logika pre overenie prostredia, stiahnutie potrebnych suboro a podobne

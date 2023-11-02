@@ -18,35 +18,42 @@ class Result(object):
 
 		raise NotImplementedError
 
+
 class OKResult(Result):
 	code = 1
 	message = 'OK'
 	description = 'Ok'
+
 
 class WAResult(Result):
 	code = 2
 	message = 'WA'
 	description = 'Wrong answer'
 
+
 class TLEResult(Result):
 	code = 3
 	message = 'TLE'
 	description = 'Time limit exceed'
 
+
 class EXCResult(Result):
-	code = 4 # maybe another id, idk
+	code = 4  # maybe another id, idk
 	message = 'EXC'
 	description = 'Exception'
 
+
 class MLEResult(Result):
-	code = 5 # maybe another id, idk
+	code = 5  # maybe another id, idk
 	message = 'MLE'
 	description = 'Memory limit exceed'
 
+
 class ERRResult(Result):
-	code = 6 # maybe another id, idk
+	code = 6  # maybe another id, idk
 	message = 'ERR'
 	description = 'Internal error'
+
 
 class IGNResult(Result):
 	code = 7
@@ -68,6 +75,7 @@ class TaskLimits(NamedTuple):
 
 
 EXTENDED_PROTOCOL = 'EXTENDED_PROTOCOL' in environ
+
 
 class Protocol:
 	tests: list[Test] = []
@@ -107,36 +115,26 @@ class Protocol:
 	def add_compilation_log(self, log: str):
 		self.compile_log = log
 
-
 	def generate(self):
 		score = 0 if self.gradeable_sets == 0 else int(self.ok_sets / self.gradeable_sets * 100)
-		protocol: dict = {
-			'runLog': {
-				'test': [],
-				'score': score,
-				'details': f'Score: {score}',
-				'finalResult': self.ok_sets,
-				'finalMessage': f'{self.result.description} (OK: {score}%)'
-			}
-		}
+		protocol: dict = {'runLog': {'test': [], 'score': score, 'details': f'Score: {score}', 'finalResult': self.ok_sets, 'finalMessage': f'{self.result.description} (OK: {score}%)'}}
 
 		for test in self.tests:
-			protocol['runLog']['test'].append({
-				'name': test.name,
-				'resultCode': test.result.code,
-				'resultMsg': test.result.message,
-				'time': int(test.time * 1000),
-				'memory': int(test.memory / 1024) if EXTENDED_PROTOCOL and test.memory is not None else None,
-				'details': test.details,
-			})
+			protocol['runLog']['test'].append(
+				{
+					'name': test.name,
+					'resultCode': test.result.code,
+					'resultMsg': test.result.message,
+					'time': int(test.time * 1000),
+					'memory': int(test.memory / 1024) if EXTENDED_PROTOCOL and test.memory is not None else None,
+					'details': test.details,
+				}
+			)
 
 		if self.compile_log:
 			protocol['compileLog'] = self.compile_log
 
 		if EXTENDED_PROTOCOL:
-			protocol['limits'] = {
-				'time': self.limits.time,
-				'memory': self.limits.memory
-			}
+			protocol['limits'] = {'time': self.limits.time, 'memory': self.limits.memory}
 
 		return dict_to_xml({'protokol': protocol})

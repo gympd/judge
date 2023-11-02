@@ -10,6 +10,7 @@ blacklisted_runners = ('__init__.py', 'template.py', 'example.py')
 
 extensions: dict[str, Runner] = {}
 
+
 def init_runners():
 	logger.info('Initializing runners')
 
@@ -25,7 +26,6 @@ def init_runners():
 			if not hasattr(module, 'init') or not callable(module.init):
 				logger.error('Unable to load - init() is not function')
 				continue
-
 
 			runner = module.init()
 
