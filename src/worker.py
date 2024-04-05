@@ -169,11 +169,14 @@ https://github.com/gympd/judge/issues/new"""
 			# Iterate all test cases
 			tests_dir = path.join(task_dir, 'tests')
 			for test_set in sorted(listdir(tests_dir)):
+				case_folder = path.join(tests_dir, test_set)
+
+				if not path.isdir(case_folder):
+					continue
+
 				protocol.begin_set(test_set)
 
 				testcases: list[str] = []
-
-				case_folder = path.join(tests_dir, test_set)
 
 				files = sorted(listdir(case_folder))
 
