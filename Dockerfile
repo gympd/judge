@@ -1,5 +1,5 @@
 # isolate build
-FROM gcc:13-bookworm AS isolate-build
+FROM gcc:14-bookworm AS isolate-build
 
 WORKDIR /app
 
